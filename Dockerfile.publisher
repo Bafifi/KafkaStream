@@ -1,0 +1,6 @@
+FROM golang:1.23.4-alpine
+WORKDIR /app
+COPY . .
+RUN go mod tidy
+RUN mkdir -p /app/output
+CMD ["go", "run", "./publisher/main.go"]
