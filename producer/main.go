@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,6 +22,14 @@ const (
 	numWorkers = 3
 	batchSize  = 10
 )
+
+func getBrokers() []string {
+	brokersEnv := os.Getenv("KAFKA_BROKERS")
+	if brokersEnv == "" {
+		return []string{"kafka1:9092"}
+	}
+	return strings.Split(brokersEnv, ",")
+}
 
 func generateRandomID() string {
 	return fmt.Sprintf("%d", rand.Intn(1000000))
@@ -43,9 +52,13 @@ func main() {
 	log.Println("Waiting for Kafka to be ready...")
 	time.Sleep(20 * time.Second)
 
+	// Get brokers from environment
+	brokers := getBrokers()
+	log.Printf("Using Kafka brokers: %v", brokers)
+
 	// Create Kafka writer
 	w := &kafka.Writer{
-		Addr:                   kafka.TCP("kafka:9092"),
+		Addr:                   kafka.TCP(brokers...),
 		Topic:                  topicName,
 		Balancer:               &kafka.Hash{},
 		WriteTimeout:           10 * time.Second,

@@ -1,4 +1,3 @@
-// Updated publisher/main.go
 package main
 
 import (
@@ -19,10 +18,55 @@ import (
 
 const (
 	consumerGroupID   = "Publishers"
-	brokerAddress     = "kafka:9092"
 	publisherInstance = "publisher"
 	outputDir         = "/app/output"
 )
+
+func getBrokers() []string {
+	brokersEnv := os.Getenv("KAFKA_BROKERS")
+	if brokersEnv == "" {
+		return []string{"kafka1:9092"}
+	}
+	return strings.Split(brokersEnv, ",")
+}
+
+// waitForTopic checks if a topic exists and waits until it does or timeout occurs
+func waitForTopic(brokers []string, topic string, maxSeconds int) {
+	log.Printf("Checking if topic %s exists...", topic)
+
+	// Choose the first broker for the check
+	brokerAddress := brokers[0]
+
+	for i := 0; i < maxSeconds; i++ {
+		// Create a temporary connection to list topics
+		conn, err := kafka.Dial("tcp", brokerAddress)
+		if err != nil {
+			log.Printf("Cannot connect to Kafka (attempt %d/%d): %v", i+1, maxSeconds, err)
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		partitions, err := conn.ReadPartitions(topic)
+		conn.Close()
+
+		if err == nil && len(partitions) > 0 {
+			log.Printf("Topic %s found with %d partitions", topic, len(partitions))
+			return
+		}
+
+		if err != nil {
+			log.Printf("Topic %s not ready yet (attempt %d/%d): %v",
+				topic, i+1, maxSeconds, err)
+		} else {
+			log.Printf("Topic %s has 0 partitions (attempt %d/%d)",
+				topic, i+1, maxSeconds)
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+
+	log.Printf("Warning: Topic %s may not exist after waiting %d seconds", topic, maxSeconds)
+}
 
 func main() {
 	// Get instance number from env var or use default
@@ -50,13 +94,17 @@ func main() {
 		cancel()
 	}()
 
+	// Get brokers from environment
+	brokers := getBrokers()
+	log.Printf("Using Kafka brokers: %v", brokers)
+
 	// Wait for Kafka to be ready and topic to be created
 	log.Println("Waiting for Kafka to be ready...")
-	waitForTopic(transformedTopic, 30)
+	waitForTopic(brokers, transformedTopic, 30)
 
 	// Create Kafka reader with more diagnostic options
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     []string{brokerAddress},
+		Brokers:     brokers,
 		Topic:       transformedTopic,
 		GroupID:     consumerGroupID,
 		MinBytes:    10e3, // 10KB
@@ -151,39 +199,4 @@ func main() {
 			f.Sync()
 		}
 	}
-}
-
-// waitForTopic checks if a topic exists and waits until it does or timeout occurs
-func waitForTopic(topic string, maxSeconds int) {
-	log.Printf("Checking if topic %s exists...", topic)
-
-	for i := 0; i < maxSeconds; i++ {
-		// Create a temporary connection to list topics
-		conn, err := kafka.Dial("tcp", brokerAddress)
-		if err != nil {
-			log.Printf("Cannot connect to Kafka (attempt %d/%d): %v", i+1, maxSeconds, err)
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		partitions, err := conn.ReadPartitions(topic)
-		conn.Close()
-
-		if err == nil && len(partitions) > 0 {
-			log.Printf("Topic %s found with %d partitions", topic, len(partitions))
-			return
-		}
-
-		if err != nil {
-			log.Printf("Topic %s not ready yet (attempt %d/%d): %v",
-				topic, i+1, maxSeconds, err)
-		} else {
-			log.Printf("Topic %s has 0 partitions (attempt %d/%d)",
-				topic, i+1, maxSeconds)
-		}
-
-		time.Sleep(1 * time.Second)
-	}
-
-	log.Printf("Warning: Topic %s may not exist after waiting %d seconds", topic, maxSeconds)
 }

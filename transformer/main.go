@@ -18,9 +18,16 @@ import (
 const (
 	sourceTopic         = "ingest-events"
 	consumerGroupID     = "Transformers"
-	brokerAddress       = "kafka:9092"
 	transformerInstance = "transformer"
 )
+
+func getBrokers() []string {
+	brokersEnv := os.Getenv("KAFKA_BROKERS")
+	if brokersEnv == "" {
+		return []string{"kafka1:9092"}
+	}
+	return strings.Split(brokersEnv, ",")
+}
 
 func main() {
 	// Get instance number from env var or use default
@@ -42,13 +49,17 @@ func main() {
 		cancel()
 	}()
 
+	// Get brokers from environment
+	brokers := getBrokers()
+	log.Printf("Using Kafka brokers: %v", brokers)
+
 	// Wait for Kafka to be ready
 	log.Println("Waiting for Kafka to be ready...")
 	time.Sleep(20 * time.Second)
 
 	// Create Kafka reader
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     []string{brokerAddress},
+		Brokers:     brokers,
 		Topic:       sourceTopic,
 		GroupID:     consumerGroupID,
 		MinBytes:    10e3, // 10KB
@@ -92,7 +103,7 @@ func main() {
 
 			// Create a writer for the transformed topic
 			writer := kafka.NewWriter(kafka.WriterConfig{
-				Brokers:  []string{brokerAddress},
+				Brokers:  brokers,
 				Topic:    transformedTopic,
 				Balancer: &kafka.Hash{},
 			})
