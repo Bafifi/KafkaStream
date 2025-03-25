@@ -1,0 +1,43 @@
+## What is Apache Kafka?
+Apache Kafka is an open-source distributed event streaming platform designed for high-throughput, fault-tolerant, and scalable data streaming. It facilitates real-time data processing and serves as a critical component in modern data architectures, enabling efficient communication between various applications and services.
+### Core Features
+- **Publish and Subscribe**: Kafka enables applications to publish messages to topics, while other applications can subscribe to those topics to receive real-time updates.
+- **Scalability**: Kafka is designed to easily scale by adding more brokers, allowing it to handle significant increases in data volume without downtime.
+- **Durability**: Messages are persistently stored and replicated across multiple nodes, ensuring reliability and data integrity.
+- **Real-time Processing**: Kafka allows for immediate analysis and processing of events as they occur, supporting timely insights and actions.
+## Key Terminology
+- **Topics**: Categories under which related messages are stored, functioning as channels for message flow.
+- **Partitions**: Subdivisions of topics that allow for parallel processing and improved load management.
+- **Producers**: Applications that send messages to Kafka topics, contributing to the overall event stream.
+- **Consumers**: Applications that read messages from Kafka topics, processing the inflow of data for various purposes.
+- **Consumer Groups**: Groups of consumers that work collaboratively to read data from a topic efficiently, enhancing the throughput of message consumption.
+
+## Benefits of Using Kafka
+
+### 1. Auto Load Balancing
+- **Partitioning**: Kafka’s partitioning allows for the distribution of data across multiple brokers, effectively managing load and ensuring high performance.
+- **Consumer Groups**: Messages are balanced among consumers in a group, maximizing throughput and enabling efficient data processing.
+- **Dynamic Membership**: Kafka can automatically adjust to changes in consumer availability, ensuring continuous message processing.
+### 2. Scalability
+- **Horizontal Scalability**: Kafka can scale out by adding new brokers to the cluster to accommodate growing data needs, all without requiring service downtime.
+- **Elastic Scaling**: Adjustments to brokers and partitions can be made dynamically, enabling responsiveness to varying operational demands.
+- **Decoupled Architecture**: Producers and consumers can be scaled independently, allowing for optimal resource management tailored to specific application requirements.
+### 3. Fault Tolerance
+- Kafka's architecture includes data replication across multiple brokers, ensuring that messages are preserved and accessible even in the event of server failures.
+- Configurable retention policies allow organizations to manage how long messages are stored, aiding in data recovery and analysis.
+### 4. Replayability & Auditability
+- Kafka allows for the replaying of messages by resetting offsets, making it easier to reprocess historical data or troubleshoot issues.
+- The retention of messages creates an audit trail, supporting compliance and data integrity needs.
+
+## SnowTube Use-Case
+
+- Simplified Scaling 
+- Improved Durability and Audit-ability
+- Simplify architecture and focus on SnowTube value add 
+
+### Architecture
+
+
+![[diagram.svg]]
+
+## Demo
